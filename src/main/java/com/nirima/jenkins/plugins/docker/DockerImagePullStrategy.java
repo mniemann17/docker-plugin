@@ -2,18 +2,11 @@ package com.nirima.jenkins.plugins.docker;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.NotFoundException;
-import com.github.dockerjava.api.model.Image;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * @author Kanstantsin Shautsou
  */
 public enum DockerImagePullStrategy {
-
     PULL_ALWAYS("Pull all images every time") {
         @Override
         public boolean pullIfNotExists(String imageName) {
@@ -55,7 +48,7 @@ public enum DockerImagePullStrategy {
     }
 
     public String getDescription() {
-        //TODO add {@link #Locale.class}?
+        // TODO add {@link #Locale.class}?
         return description;
     }
 
@@ -77,12 +70,10 @@ public enum DockerImagePullStrategy {
         try {
             client.inspectImageCmd(image).exec();
             imageExists = true;
-        } catch (NotFoundException e) {
+        } catch (NotFoundException handledByCode) {
             imageExists = false;
         }
 
-        return imageExists ?
-                pullIfExists(image) :
-                pullIfNotExists(image);
+        return imageExists ? pullIfExists(image) : pullIfNotExists(image);
     }
 }

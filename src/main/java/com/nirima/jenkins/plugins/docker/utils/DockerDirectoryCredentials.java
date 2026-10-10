@@ -1,22 +1,14 @@
 package com.nirima.jenkins.plugins.docker.utils;
 
-import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
-import com.cloudbees.plugins.credentials.impl.Messages;
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
-import hudson.Util;
-import hudson.util.Secret;
-import org.apache.commons.io.FileUtils;
-import org.jenkinsci.plugins.docker.commons.credentials.DockerServerCredentials;
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import java.io.File;
 import java.io.IOException;
+import org.apache.commons.io.FileUtils;
+import org.jenkinsci.plugins.docker.commons.credentials.DockerServerCredentials;
 
 /**
  * Created by magnayn on 17/11/2015.
@@ -31,7 +23,6 @@ public class DockerDirectoryCredentials extends BaseStandardCredentials {
         super(scope, id, description);
     }
 
-
     public String getPath() {
         return path;
     }
@@ -43,7 +34,10 @@ public class DockerDirectoryCredentials extends BaseStandardCredentials {
     private Object readResolve() throws IOException {
         final File f = new File(path);
 
-        return new DockerServerCredentials(getScope(), getId(), getDescription(),
+        return new DockerServerCredentials(
+                getScope(),
+                getId(),
+                getDescription(),
                 FileUtils.readFileToString(new File(f, "key.pem")),
                 FileUtils.readFileToString(new File(f, "cert.pem")),
                 FileUtils.readFileToString(new File(f, "ca.pem")));
@@ -51,9 +45,9 @@ public class DockerDirectoryCredentials extends BaseStandardCredentials {
 
     @Extension
     public static class DescriptorImpl extends CredentialsDescriptor {
-        public DescriptorImpl() {
-        }
+        public DescriptorImpl() {}
 
+        @Override
         public String getDisplayName() {
             return "Docker Certificates Directory (Deprecated)";
         }

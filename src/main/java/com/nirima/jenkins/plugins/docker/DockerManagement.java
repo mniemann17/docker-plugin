@@ -1,38 +1,30 @@
 package com.nirima.jenkins.plugins.docker;
 
-import com.github.dockerjava.api.model.Container;
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
+import com.github.dockerjava.api.DockerClient;
 import com.nirima.jenkins.plugins.docker.utils.JenkinsUtils;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.ManagementLink;
 import hudson.model.Saveable;
-import jenkins.model.Jenkins;
-import org.kohsuke.stapler.StaplerProxy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
+import io.jenkins.docker.client.DockerAPI;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-
-
+import java.util.stream.Collectors;
+import jenkins.model.Jenkins;
+import org.kohsuke.stapler.StaplerProxy;
 
 /**
- * Manage the docker images.
- * Docker page under "Manage Jenkins" page.
+ * Manage the docker images. Docker page under "Manage Jenkins" page.
  */
 @Extension
 public class DockerManagement extends ManagementLink implements StaplerProxy, Describable<DockerManagement>, Saveable {
 
-    private static final Logger logger = LoggerFactory.getLogger(DockerManagement.class);
-
     @Override
     public String getIconFileName() {
-        return com.nirima.jenkins.plugins.docker.utils.Consts.PLUGIN_IMAGES_URL + "/48x48/docker.png";
+        return "symbol-logo-docker plugin-ionicons-api";
     }
 
     @Override
@@ -40,27 +32,27 @@ public class DockerManagement extends ManagementLink implements StaplerProxy, De
         return "docker-plugin";
     }
 
+    @Override
     public String getDisplayName() {
-        return Messages.DisplayName();
+        return Messages.displayName();
     }
 
     @Override
     public String getDescription() {
-        return Messages.PluginDescription();
+        return Messages.pluginDescription();
     }
 
     public static DockerManagement get() {
         return ManagementLink.all().get(DockerManagement.class);
     }
 
-
+    @Override
     public DescriptorImpl getDescriptor() {
-        return Jenkins.getInstance().getDescriptorByType(DescriptorImpl.class);
+        return Jenkins.get().getDescriptorByType(DescriptorImpl.class);
     }
 
-    public void save() throws IOException {
-
-    }
+    @Override
+    public void save() throws IOException {}
 
     /**
      * Descriptor is only used for UI form bindings.
@@ -70,55 +62,56 @@ public class DockerManagement extends ManagementLink implements StaplerProxy, De
 
         @Override
         public String getDisplayName() {
-            return null; // unused
+            return DockerManagement.class.getSimpleName(); // unused
         }
     }
 
-        public DockerManagementServer getServer(String serverName) {
-            return new DockerManagementServer(serverName);
+    public DockerManagementServer getServer(String serverName) {
+        return new DockerManagementServer(serverName);
+    }
+
+    @Override
+    public Object getTarget() {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+        return this;
+    }
+
+    @NonNull
+    @Override
+    public Category getCategory() {
+        return ManagementLink.Category.CONFIGURATION;
+    }
+
+    public Collection<String> getServerNames() {
+        return JenkinsUtils.getServerNames();
+    }
+
+    public static class ServerDetail {
+        final DockerCloud cloud;
+
+        public ServerDetail(DockerCloud cloud) {
+            this.cloud = cloud;
         }
 
-        public Object getTarget() {
-            Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
-            return this;
+        public String getName() {
+            return cloud.getDisplayName();
         }
 
-        public Collection<String> getServerNames() {
-            return Collections2.transform(JenkinsUtils.getServers(), new Function<DockerCloud, String>() {
-                public String apply(@Nullable DockerCloud input) {
-                    return input.getDisplayName();
+        public String getActiveHosts() {
+            try {
+                final DockerAPI dockerApi = cloud.getDockerApi();
+                final List<?> containers;
+                try (final DockerClient client = dockerApi.getClient()) {
+                    containers = client.listContainersCmd().exec();
                 }
-            });
-        }
-
-        public static class ServerDetail {
-            final DockerCloud cloud;
-
-            public ServerDetail(DockerCloud cloud) {
-                this.cloud = cloud;
+                return "(" + containers.size() + ")";
+            } catch (Exception ex) {
+                return "Error: " + ex;
             }
-
-            public String getName() {
-                return cloud.getDisplayName();
-            }
-
-            public String getActiveHosts() {
-                try {
-                    List<Container> containers = cloud.getClient().listContainersCmd().exec();
-                    return "(" + containers.size() + ")";
-                } catch(Exception ex) {
-                    return "Error";
-                }
-            }
-
         }
+    }
 
-        public Collection<ServerDetail> getServers() {
-            return Collections2.transform(JenkinsUtils.getServers(), new Function<DockerCloud, ServerDetail>() {
-                public ServerDetail apply(@Nullable DockerCloud input) {
-                    return new ServerDetail(input);
-                }
-            });
-        }
-
+    public Collection<ServerDetail> getServers() {
+        return DockerCloud.instances().stream().map(ServerDetail::new).collect(Collectors.toList());
+    }
 }

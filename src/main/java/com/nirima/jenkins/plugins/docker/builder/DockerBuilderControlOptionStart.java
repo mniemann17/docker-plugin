@@ -2,17 +2,17 @@ package com.nirima.jenkins.plugins.docker.builder;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.DockerException;
+import com.nirima.jenkins.plugins.docker.DockerCloud;
 import hudson.Extension;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import io.jenkins.docker.client.DockerAPI;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 /**
  * Starts container in DockerCloud
@@ -28,12 +28,20 @@ public class DockerBuilderControlOptionStart extends DockerBuilderControlOptionS
     }
 
     @Override
-    public void execute(Run<?, ?> build, Launcher launcher, TaskListener listener)
-            throws DockerException {
+    public void execute(Run<?, ?> build, Launcher launcher, TaskListener listener) throws DockerException {
         LOG.info("Starting container {}", containerId);
         listener.getLogger().println("Starting container " + containerId);
 
-        DockerClient client = getCloud(build,launcher).getClient();
+        final DockerCloud cloud = getCloud(build, launcher);
+        final DockerAPI dockerApi = cloud.getDockerApi();
+        try (final DockerClient client = dockerApi.getClient()) {
+            executeOnDocker(build, client);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private void executeOnDocker(Run<?, ?> build, DockerClient client) {
         client.startContainerCmd(containerId).exec();
 
         getLaunchAction(build).started(client, containerId);

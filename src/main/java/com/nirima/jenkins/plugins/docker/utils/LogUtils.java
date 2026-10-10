@@ -1,15 +1,13 @@
 package com.nirima.jenkins.plugins.docker.utils;
 
 import com.github.dockerjava.api.model.ResponseItem;
-import hudson.model.BuildListener;
 import hudson.model.TaskListener;
 
 /**
  * @author Kanstantsin Shautsou
  */
 public class LogUtils {
-    private LogUtils() {
-    }
+    private LogUtils() {}
 
     public static void printResponseItemToListener(TaskListener listener, ResponseItem item) {
 

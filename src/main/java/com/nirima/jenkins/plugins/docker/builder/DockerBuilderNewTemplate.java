@@ -1,47 +1,33 @@
 package com.nirima.jenkins.plugins.docker.builder;
 
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserListBoxModel;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.nirima.jenkins.plugins.docker.DockerCloud;
 import com.nirima.jenkins.plugins.docker.DockerTemplate;
-import com.trilead.ssh2.Connection;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
-import hudson.model.ItemGroup;
-import hudson.plugins.sshslaves.SSHLauncher;
-import hudson.security.ACL;
-import hudson.security.AccessControlled;
-import hudson.security.Permission;
 import hudson.slaves.Cloud;
-import hudson.slaves.RetentionStrategy;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
-import hudson.util.ListBoxModel;
+import java.io.IOException;
+import java.io.PrintStream;
 import jenkins.model.Jenkins;
-import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.Serializable;
-
 
 /**
  * Builder that adds template to all clouds.
  *
  * @author Jocelyn De La Rosa
  */
-public class DockerBuilderNewTemplate extends Builder implements Serializable {
+public class DockerBuilderNewTemplate extends Builder {
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerBuilderNewTemplate.class);
 
     private DockerTemplate dockerTemplate;
+
+    @SuppressWarnings("unused")
     private int version = 1;
 
     @DataBoundConstructor
@@ -62,11 +48,9 @@ public class DockerBuilderNewTemplate extends Builder implements Serializable {
             throws InterruptedException, IOException {
         final PrintStream llogger = listener.getLogger();
         final String dockerImage = dockerTemplate.getDockerTemplateBase().getImage();
-
         // Job must run as Admin as we are changing global cloud configuration here.
         build.getACL().checkPermission(Jenkins.ADMINISTER);
-
-        for (Cloud c : Jenkins.getInstance().clouds) {
+        for (Cloud c : Jenkins.get().clouds) {
             if (c instanceof DockerCloud && dockerImage != null) {
                 DockerCloud dockerCloud = (DockerCloud) c;
                 if (dockerCloud.getTemplate(dockerImage) == null) {
@@ -76,7 +60,6 @@ public class DockerBuilderNewTemplate extends Builder implements Serializable {
                 }
             }
         }
-
         return true;
     }
 
@@ -87,7 +70,6 @@ public class DockerBuilderNewTemplate extends Builder implements Serializable {
 
     @Extension
     public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
-
         @Override
         public boolean isApplicable(Class<? extends AbstractProject> jobType) {
             return true;
@@ -96,18 +78,6 @@ public class DockerBuilderNewTemplate extends Builder implements Serializable {
         @Override
         public String getDisplayName() {
             return "Add a new template to all docker clouds";
-        }
-
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context) {
-
-            AccessControlled ac = (context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getInstance());
-            if (!ac.hasPermission(Jenkins.ADMINISTER)) {
-                return new ListBoxModel();
-            }
-
-            return new SSHUserListBoxModel().withMatching(SSHAuthenticator.matcher(Connection.class),
-                    CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, context,
-                            ACL.SYSTEM, SSHLauncher.SSH_SCHEME));
         }
     }
 }

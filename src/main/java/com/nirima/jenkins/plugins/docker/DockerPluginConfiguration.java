@@ -1,13 +1,10 @@
 package com.nirima.jenkins.plugins.docker;
 
-import hudson.Extension;
-import jenkins.model.GlobalConfiguration;
-import net.sf.json.JSONObject;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.StaplerRequest;
-
 import java.util.Collections;
 import java.util.List;
+import jenkins.model.GlobalConfiguration;
+import net.sf.json.JSONObject;
+import org.kohsuke.stapler.StaplerRequest2;
 
 @Deprecated
 public class DockerPluginConfiguration extends GlobalConfiguration {
@@ -31,21 +28,20 @@ public class DockerPluginConfiguration extends GlobalConfiguration {
     }
 
     @Override
-    public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
-        req.bindJSON(this,json);
+    public boolean configure(StaplerRequest2 req, JSONObject json) throws FormException {
+        req.bindJSON(this, json);
         return true;
     }
 
     public DockerRegistry getRegistryByName(String registryName) {
-        for(DockerRegistry registry : registryList) {
-            if( registry.registry.equalsIgnoreCase(registryName))
+        for (DockerRegistry registry : registryList) {
+            if (registry.registry.equalsIgnoreCase(registryName)) {
                 return registry;
+            }
         }
         // Not found
         return null;
     }
-
-
 
     public void setRegistryList(List<DockerRegistry> registryList) {
         this.registryList = registryList;
@@ -56,15 +52,12 @@ public class DockerPluginConfiguration extends GlobalConfiguration {
         return registryList;
     }
 
-
-
     // --- obsolete code goes here. kept for backward compatibility
 
     public final boolean getPullFix() {
         return false;
     }
 
-    public final void setPullFix(boolean pullFix) {
-    }
-
+    @SuppressWarnings("unused")
+    public final void setPullFix(boolean pullFix) {}
 }

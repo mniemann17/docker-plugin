@@ -5,6 +5,12 @@
         <f:textbox />
     </f:entry>
 
+    <f:property field="disabled"/>
+
+    <f:entry title="${%Name}" field="name">
+        <f:textbox />
+    </f:entry>
+
     <f:property field="dockerTemplateBase"/>
 
 
@@ -12,7 +18,7 @@
         <f:textbox/>
     </f:entry>
 
-    <f:entry title="${%Remote Filing System Root}" field="remoteFs">
+    <f:entry title="${%Remote File System Root}" field="remoteFs">
         <f:textbox/>
     </f:entry>
 
@@ -23,12 +29,20 @@
 
     <f:dropdownDescriptorSelector field="connector" title="Connect method"/>
 
+    <f:entry title="${%Stop timeout}" field="stopTimeout">
+        <f:number default="10"/>
+    </f:entry>
+
     <f:entry title="${%Remove volumes}" field="removeVolumes">
         <f:checkbox/>
     </f:entry>
 
     <f:entry title="${%Pull strategy}" field="pullStrategy">
         <f:enum>${it.description}</f:enum>
+    </f:entry>
+
+    <f:entry title="${%Pull timeout}" field="pullTimeout">
+        <f:number default="300"/>
     </f:entry>
 
     <f:entry title="Node Properties">
